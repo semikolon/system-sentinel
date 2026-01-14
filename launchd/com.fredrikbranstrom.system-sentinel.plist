@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.fredrikbranstrom.system-sentinel</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/Users/fredrikbranstrom/.local/bin/system-sentinel</string>
+    </array>
+
+    <key>RunAtLoad</key>
+    <true/>
+
+    <key>KeepAlive</key>
+    <true/>
+
+    <key>StandardOutPath</key>
+    <string>/Users/fredrikbranstrom/.local/share/system-sentinel/stdout.log</string>
+
+    <key>StandardErrorPath</key>
+    <string>/Users/fredrikbranstrom/.local/share/system-sentinel/stderr.log</string>
+
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>RUST_LOG</key>
+        <string>system_sentinel=info</string>
+        <key>PATH</key>
+        <string>/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin</string>
+    </dict>
+
+    <!-- Don't throttle restarts too aggressively -->
+    <key>ThrottleInterval</key>
+    <integer>10</integer>
+
+    <!-- Process priority - slightly lower than normal -->
+    <key>Nice</key>
+    <integer>5</integer>
+
+    <!-- Working directory -->
+    <key>WorkingDirectory</key>
+    <string>/Users/fredrikbranstrom</string>
+</dict>
+</plist>

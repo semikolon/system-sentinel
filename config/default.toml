@@ -1,0 +1,51 @@
+# System Sentinel Configuration
+# Copy to ~/.config/system-sentinel/config.toml
+
+[general]
+# How often to check system metrics (seconds)
+check_interval_seconds = 30
+
+# Log file location (~ expanded automatically)
+log_file = "~/.local/share/system-sentinel/sentinel.log"
+
+[thresholds]
+# Memory thresholds (percentage of total RAM)
+memory_warning = 80
+memory_critical = 90
+
+# Swap thresholds (percentage)
+swap_warning = 50
+swap_critical = 75
+
+# Load average thresholds (absolute values)
+# Warning: Mac Mini M2 has 8 cores, so load > 8 means oversubscribed
+load_warning = 10.0
+load_critical = 50.0
+
+# Memory growth rate (GB per hour) - detects slow leaks
+# A sustained 2GB/hr growth likely indicates a memory leak
+memory_growth_rate_warning = 2.0
+memory_growth_rate_critical = 5.0
+
+[detection]
+# Processes to watch specifically (known to sometimes leak)
+# Case-insensitive substring matching
+process_watchlist = ["ghostty", "Arc", "node", "Electron", "Claude"]
+
+# Only flag watched processes if they exceed this memory (MB)
+process_memory_threshold_mb = 2000
+
+# Minimum time between notifications for same issue (minutes)
+# Prevents notification spam
+notification_cooldown_minutes = 10
+
+[notification]
+# Use Hammerspoon alerts (requires Hammerspoon + hs CLI)
+use_hammerspoon = true
+
+# Fallback to terminal-notifier if Hammerspoon unavailable
+fallback_to_terminal_notifier = true
+
+# Alert colors (hex)
+warning_color = "#FFA500"   # Orange
+critical_color = "#FF4444"  # Red
