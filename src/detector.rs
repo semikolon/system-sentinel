@@ -40,6 +40,7 @@ pub struct Anomaly {
     pub level: AlertLevel,
     pub message: String,
     pub details: Vec<String>,
+    pub narration_message: String,
 }
 
 /// Anomaly detection with cooldown tracking
@@ -169,8 +170,9 @@ impl AnomalyDetector {
             Some(Anomaly {
                 anomaly_type: AnomalyType::Memory,
                 level: AlertLevel::Critical,
-                message: msg,
+                message: msg.clone(),
                 details: vec![],
+                narration_message: format!("Memory critical. {:.0} percent. {}", percent, culprit),
             })
         } else if percent >= warn_thresh {
             let culprit = self.get_memory_culprit(metrics);
@@ -179,8 +181,9 @@ impl AnomalyDetector {
             Some(Anomaly {
                 anomaly_type: AnomalyType::Memory,
                 level: AlertLevel::Warning,
-                message: msg,
+                message: msg.clone(),
                 details: vec![],
+                narration_message: format!("Memory high. {:.0} percent. {}", percent, culprit),
             })
         } else {
             None
@@ -224,8 +227,9 @@ impl AnomalyDetector {
             Some(Anomaly {
                 anomaly_type: AnomalyType::Swap,
                 level,
-                message: msg,
+                message: msg.clone(),
                 details: vec![],
+                narration_message: format!("Swap high. {:.0} percent. {}", percent, culprit),
             })
         } else {
             None
@@ -270,8 +274,9 @@ impl AnomalyDetector {
                 return Some(Anomaly {
                     anomaly_type: AnomalyType::Load,
                     level,
-                    message: msg,
+                    message: msg.clone(),
                     details: vec![],
+                    narration_message: format!("Load high. {:.1}. {}", load, culprit),
                 });
             }
         } else {
@@ -318,8 +323,9 @@ impl AnomalyDetector {
             Some(Anomaly {
                 anomaly_type: AnomalyType::MemoryGrowthRate,
                 level: AlertLevel::Critical,
-                message: msg,
+                message: msg.clone(),
                 details: vec![],
+                narration_message: format!("Memory growth critical. {:.1} gigabytes per hour. {}", rate, culprit),
             })
         } else if rate >= thresholds.memory_growth_rate_warning {
             let culprit = self.get_memory_culprit(metrics);
@@ -328,8 +334,9 @@ impl AnomalyDetector {
             Some(Anomaly {
                 anomaly_type: AnomalyType::MemoryGrowthRate,
                 level: AlertLevel::Warning,
-                message: msg,
+                message: msg.clone(),
                 details: vec![],
+                narration_message: format!("Memory growth high. {:.1} gigabytes per hour. {}", rate, culprit),
             })
         } else {
             None
@@ -370,6 +377,7 @@ impl AnomalyDetector {
                             level: AlertLevel::Warning,
                             message: format!("Heavy App: {} ({:.0}GB)", name, proc.memory_mb / 1024.0),
                             details: vec![],
+                            narration_message: format!("Process {} memory high.", name),
                         });
                     }
                 }

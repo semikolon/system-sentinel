@@ -12,6 +12,7 @@ pub struct Notifier {
     fallback_to_terminal_notifier: bool,
     warning_color: String,
     critical_color: String,
+    narrator: crate::narration::Narrator,
 }
 
 impl Notifier {
@@ -21,12 +22,18 @@ impl Notifier {
             fallback_to_terminal_notifier: config.notification.fallback_to_terminal_notifier,
             warning_color: config.notification.warning_color.clone(),
             critical_color: config.notification.critical_color.clone(),
+            narrator: crate::narration::Narrator::new(),
         }
     }
 
     /// Send notification for detected anomaly
     pub fn send(&self, anomaly: &Anomaly) -> Result<()> {
         info!("Sending {} notification: {}", anomaly.level, anomaly.message);
+
+        // Trigger narration (non-blocking on audio, but blocks on socket IPC)
+        if let Err(e) = self.narrator.narrate(&anomaly.narration_message) {
+            warn!("Narration failed: {}", e);
+        }
 
         if self.use_hammerspoon {
             match self.send_hammerspoon(anomaly) {

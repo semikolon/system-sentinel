@@ -6,6 +6,7 @@
 mod config;
 mod detector;
 mod metrics;
+mod narration;
 mod notifier;
 
 use anyhow::Result;
