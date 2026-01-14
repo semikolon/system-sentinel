@@ -196,6 +196,11 @@ impl AnomalyDetector {
         let thresholds = &self.config.thresholds;
         let recovery = thresholds.recovery_margin;
 
+        // Apply Correlation: Suppress swap alerts if memory pressure is low (macOS opportunistic swapping)
+        if metrics.memory_percent <= 80.0 {
+            return None;
+        }
+
         // Apply Hysteresis
         let active_level = self.active_alerts.get(&AnomalyType::Swap);
         let (warn_thresh, crit_thresh) = match active_level {
@@ -621,5 +626,25 @@ mod tests {
         
         // Growth should be inhibited by memory
         assert_eq!(a.anomaly_type, AnomalyType::Memory);
+    }
+
+    #[test]
+    fn test_swap_correlation() {
+        let mut config = Config::default();
+        config.detection.persistent_breach_threshold = 1;
+        config.detection.notification_cooldown_minutes = 0;
+        config.thresholds.swap_warning = 80.0;
+        config.thresholds.memory_warning = 90.0;
+
+        let mut detector = AnomalyDetector::new(&config);
+        
+        // High swap (90%) but low memory (70%)
+        let m_low_mem = mock_metrics(70.0, 90.0, None);
+        assert!(detector.check(&m_low_mem).is_none(), "Swap alert should be suppressed when memory is low");
+
+        // High swap (90%) and high memory (85%)
+        let m_high_mem = mock_metrics(85.0, 90.0, None);
+        let a = detector.check(&m_high_mem).expect("Should alert when memory is high");
+        assert_eq!(a.anomaly_type, AnomalyType::Swap);
     }
 }
