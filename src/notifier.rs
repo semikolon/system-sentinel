@@ -31,7 +31,7 @@ impl Notifier {
         info!("Sending {} notification: {}", anomaly.level, anomaly.message);
 
         // Trigger narration (non-blocking on audio, but blocks on socket IPC)
-        if let Err(e) = self.narrator.narrate(&anomaly.narration_message) {
+        if let Err(e) = self.narrator.narrate(&anomaly.narration_message, anomaly.sound_hint.as_deref()) {
             warn!("Narration failed: {}", e);
         }
 
