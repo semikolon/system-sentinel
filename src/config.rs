@@ -80,8 +80,8 @@ fn default_swap_warning() -> f64 { 80.0 }
 fn default_swap_critical() -> f64 { 95.0 }
 fn default_load_warning() -> f64 { 10.0 }
 fn default_load_critical() -> f64 { 50.0 }
-fn default_memory_growth_rate_warning() -> f64 { 1.0 }
-fn default_memory_growth_rate_critical() -> f64 { 4.0 }
+fn default_memory_growth_rate_warning() -> f64 { 3.0 }
+fn default_memory_growth_rate_critical() -> f64 { 8.0 }
 fn default_recovery_margin() -> f64 { 5.0 }
 fn default_process_watchlist() -> Vec<String> {
     vec!["ghostty".to_string(), "Arc".to_string(), "node".to_string(), "Electron".to_string()]
@@ -158,9 +158,11 @@ impl Config {
     }
 
     /// Get the default config file path
+    /// Prioritizes ~/.config/system-sentinel/config.toml even on macOS
     pub fn config_path() -> PathBuf {
-        dirs::config_dir()
-            .unwrap_or_else(|| PathBuf::from("~/.config"))
+        dirs::home_dir()
+            .unwrap_or_else(|| PathBuf::from("/Users/fredrikbranstrom"))
+            .join(".config")
             .join("system-sentinel")
             .join("config.toml")
     }
