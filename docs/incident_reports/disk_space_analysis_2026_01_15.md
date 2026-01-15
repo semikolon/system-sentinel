@@ -235,12 +235,13 @@ rm -rf ~/Projects/Archived\ Code/yoga-pose-simulation/node_modules
 
 ## Long-term Recommendations
 
-1. ✅ **Auto-clean Kamal deploys**: Implemented in brf-auto post-deploy hook
-2. **Set Docker disk limit**: Docker Desktop → Settings → Resources → Disk image size → 32GB max
-3. **Consider OrbStack**: Drop-in Docker Desktop replacement with auto disk reclaim
-4. **Periodic cache clearing**: Monthly clear browser/app caches
-5. **Clean Rust targets**: Add `cargo clean` to project maintenance routine
-6. **Archive old projects**: Move to external drive or delete node_modules in archived projects
+1. ✅ **Auto-clean Kamal deploys**: Implemented in brf-auto post-deploy hook (but see caveat below)
+2. **⚠️ Monthly buildx cleanup**: `docker buildx rm kamal-local-registry-docker-container && docker volume prune -f` + fstrim (post-deploy hook doesn't catch this!)
+3. **Consider OrbStack**: Drop-in Docker Desktop replacement with auto disk reclaim - best long-term fix
+4. **Set Docker disk limit**: Docker Desktop → Settings → Resources → 32GB max
+5. **Periodic cache clearing**: Monthly clear browser/app caches
+6. **Clean Rust targets**: Add `cargo clean` to project maintenance routine
+7. **Archive old projects**: Move to external drive or delete node_modules in archived projects
 
 ---
 
@@ -263,19 +264,53 @@ rm -rf ~/Projects/Archived\ Code/yoga-pose-simulation/node_modules
 
 **Disk free after cleanup**: 12GB (up from 6.6GB)
 
-### Pending Recovery (After Reboot)
+### ✅ Completed Recovery (After Reboot)
+
+**Problem discovered**: BuildKit cache was hiding in a **volume** (`buildx_buildkit_..._state`), not in "Build Cache". `docker builder prune` doesn't touch volumes!
+
+**Actual fix:**
 ```bash
-# 1. Reboot to restore Docker daemon to healthy state
-# 2. Wait for Docker Desktop green icon + containers responsive
-# 3. Then run:
-docker builder prune -af   # Reclaims ~16GB BuildKit cache
+# 1. Remove orphaned volumes
+docker volume prune -f                              # Freed 5.6GB
+
+# 2. Remove Kamal buildx builder (has 21.4GB in its volume)
+docker buildx rm kamal-local-registry-docker-container
+
+# 3. Prune now-orphaned buildx volume
+docker volume prune -f
+
+# 4. Trigger sparse file reclaim
+docker run --rm --privileged --pid=host alpine:latest \
+  nsenter -t 1 -m -u -i -n fstrim -v /var/lib/docker
 ```
 
-**Expected final state**: ~25GB+ free, Docker.raw back to ~11GB
+**Result**: Docker.raw **27GB → 1.7GB**
 
-### Prevention Implemented
-- brf-auto `.kamal/hooks/post-deploy` now auto-cleans after each deploy
-- Future consideration: OrbStack migration for automatic disk reclaim
+### Prevention Strategy
+
+**Root cause**: Kamal creates a `docker-container` buildx builder that stores cache in a Docker **volume**, not build cache. This volume grows unbounded and survives `docker builder prune`.
+
+**Prevention options:**
+
+1. **Periodic buildx cleanup** (monthly or when disk low):
+   ```bash
+   docker buildx rm kamal-local-registry-docker-container
+   docker volume prune -f
+   # Run fstrim to reclaim sparse file space
+   docker run --rm --privileged --pid=host alpine:latest \
+     nsenter -t 1 -m -u -i -n fstrim -v /var/lib/docker
+   ```
+   Kamal recreates the builder on next deploy.
+
+2. **OrbStack migration** (recommended):
+   - Auto-reclaims disk space (no fstrim needed)
+   - 0.8GB RAM vs 2.4GB Docker Desktop
+   - `brew install orbstack` - drop-in replacement
+
+3. **Set Docker disk limit**: Docker Desktop → Settings → Resources → 32GB max
+   (Won't prevent buildx bloat but caps total damage)
+
+**Post-deploy hook** (`brf-auto/.kamal/hooks/post-deploy`): Runs `docker builder prune` but this does NOT clean buildx volumes - manual cleanup still needed periodically.
 
 ---
 
