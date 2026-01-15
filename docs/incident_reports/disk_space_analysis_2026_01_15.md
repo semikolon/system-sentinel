@@ -20,6 +20,8 @@ docker builder prune -f --keep-storage=5GB  # After each deploy
 docker builder prune -af                     # Nuclear: remove ALL build cache
 ```
 
+**⚠️ NEVER prune a hung daemon**: If `docker system df` times out or Docker is unresponsive, reboot first. Pruning against a degraded daemon risks corruption or inconsistent state. Always verify Docker is healthy (green icon, containers responsive) before cleanup commands.
+
 ### Remote Server (old containers/images)
 ```bash
 kamal prune all  # Keeps last 5 deployments
