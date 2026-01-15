@@ -302,10 +302,7 @@ docker run --rm --privileged --pid=host alpine:latest \
    ```
    Kamal recreates the builder on next deploy.
 
-2. **OrbStack migration** (recommended):
-   - Auto-reclaims disk space (no fstrim needed)
-   - 0.8GB RAM vs 2.4GB Docker Desktop
-   - `brew install orbstack` - drop-in replacement
+2. **OrbStack migration** (recommended) - see detailed guide below
 
 3. **Set Docker disk limit**: Docker Desktop → Settings → Resources → 32GB max
    (Won't prevent buildx bloat but caps total damage)
@@ -316,4 +313,120 @@ docker run --rm --privileged --pid=host alpine:latest \
 
 ## Post-Analysis Status
 
-For sustainable disk management, consider OrbStack migration (auto disk reclaim) or the 228GB constraint when deciding which development tools to keep active.
+Docker.raw reduced from 27GB → 1.7GB. Graphiti data preserved (3.7KB in falkordb_data volume).
+
+---
+
+## OrbStack Migration Guide
+
+**Research Date**: 2026-01-15
+
+### Why OrbStack?
+
+| Feature | Docker Desktop | OrbStack |
+|---------|---------------|----------|
+| RAM usage | 2.4GB idle | 0.8GB idle |
+| Disk reclaim | Manual fstrim | **Automatic** |
+| Startup time | 30-60s | ~2s |
+| BuildKit volumes | Grow unbounded | Auto-cleanup |
+| Price | Free (personal) | Free (personal), $8/mo commercial |
+
+### Migration Process
+
+**Step 1: Backup critical volumes** (precautionary)
+```bash
+# List volumes to identify what matters
+docker volume ls
+
+# For Graphiti, backup is tiny (<1MB):
+docker run --rm -v falkordb_data:/data -v $(pwd):/backup alpine \
+  tar czf /backup/falkordb_backup.tar.gz /data
+```
+
+**Step 2: Install OrbStack**
+```bash
+brew install orbstack
+```
+
+**Step 3: Open OrbStack and migrate**
+- OrbStack prompts to migrate Docker Desktop data automatically
+- **Migration copies data** - original Docker Desktop data stays intact
+- Or manually: `orb docker migrate` or File > Migrate Docker Data
+
+**Step 4: Verify migration**
+```bash
+# Check volumes migrated
+docker volume ls
+# Should see falkordb_data
+
+# Check Graphiti container works
+docker ps
+# Start falkordb if needed
+```
+
+**Step 5: Stop Docker Desktop**
+- Quit Docker Desktop to free resources
+- OrbStack automatically takes over `/var/run/docker.sock`
+
+### Kamal Compatibility
+
+✅ **Fully compatible** - OrbStack supports:
+- Multi-arch builds via `docker buildx` (Kamal's default)
+- Same Docker CLI, Compose, and buildx commands
+- Creates buildx builders same as Docker Desktop
+
+**Kamal-specific setup** (if needed):
+```bash
+# Create multi-platform builder (OrbStack does this automatically)
+docker buildx create --name mybuilder --use
+docker buildx inspect --bootstrap
+```
+
+### FalkorDB/Graphiti Compatibility
+
+✅ **Works identically** - OrbStack volumes work same as Docker Desktop:
+- Volumes persist at `~/OrbStack/docker/volumes/`
+- Can browse volumes in Finder via OrbStack sidebar
+- Same port mapping (6379, 6380, etc.)
+
+### Known Risks & Mitigations
+
+| Risk | Likelihood | Mitigation |
+|------|------------|------------|
+| Migration data loss | Low (1 GitHub issue) | Backup volumes first |
+| Kamal buildx issues | Very low | OrbStack has full buildx support |
+| FalkorDB issues | Very low | Standard Redis protocol |
+
+**One reported migration failure** (GitHub #1530): User lost data during migration. Cause unclear, issue unresolved. **Mitigation**: Backup volumes before migrating (see Step 1).
+
+### Rollback Plan
+
+If OrbStack doesn't work:
+```bash
+# Switch Docker context back to Desktop
+docker context use desktop-linux
+
+# Or fully revert
+# See: https://docs.orbstack.dev/install#docker-revert
+```
+
+### Side-by-Side Testing
+
+Can run both simultaneously using Docker contexts:
+```bash
+docker context ls                    # See available contexts
+docker context use orbstack          # Use OrbStack
+docker context use desktop-linux     # Use Docker Desktop
+```
+
+### Recommendation
+
+**Migrate to OrbStack** - the automatic disk reclaim alone is worth it. The 27GB → 1.7GB recovery we just did would have been unnecessary with OrbStack.
+
+**Migration checklist:**
+- [ ] Backup falkordb_data volume
+- [ ] Install OrbStack (`brew install orbstack`)
+- [ ] Run migration (automatic prompt or `orb docker migrate`)
+- [ ] Verify Graphiti container starts
+- [ ] Stop Docker Desktop
+- [ ] Test Kamal deploy to confirm buildx works
