@@ -65,17 +65,28 @@ sudo convmv -r -f utf8 -t utf8 --nfc --nfd --notest /Users
 | Local TM snapshot | ~1GB | Will be released after backup completes |
 
 ### Recovery Plan
-1. ✅ **Wait for Time Machine to complete** - DONE (15:28 CET, now in ThinningPostBackup phase)
-2. **Reboot** - Cleanest recovery path. Will:
+1. ✅ **Wait for Time Machine to complete** - DONE (15:28 CET, ThinningPostBackup)
+2. ✅ **Time Machine fully idle** - Confirmed 15:35 CET (`Running = 0`)
+3. **Reboot** - Cleanest recovery path. Will:
    - Kill all zombie Docker processes
    - Release local TM snapshot (~1GB)
    - Clear temporary files and stuck file handles
    - Give Docker daemon a fresh start
 
+### Correction: Docker.raw Size Misconception
+
+**Original claim was wrong.** Docker.raw is a **sparse file** on APFS:
+- **Logical size** (`ls -lh`): Shows maximum allocation (can appear as 64GB+)
+- **Physical size** (`du -h`): Actual disk consumption (often 50-70% less)
+
+The deleted Docker.raw likely consumed **10-30GB actual disk space**, not 228GB. The 228GB figure is the total boot disk capacity. APFS sparse files compress empty blocks, so the file's apparent size vastly overstates real disk usage.
+
+**Reference**: [Docker Desktop Mac FAQs](https://docs.docker.com/desktop/troubleshoot-and-support/faqs/macfaqs/)
+
 ### Risk Assessment
-- **HIGH**: 15GB is critically low for development work
-- **MEDIUM**: Docker may need Docker.raw deletion if daemon won't recover (would lose all images/containers AGAIN)
-- **LOW**: Time Machine backup is healthy and completing successfully
+- **HIGH**: 15GB free is critically low for development work
+- **MEDIUM**: Docker may need Docker.raw deletion if daemon won't recover post-reboot
+- **LOW**: Time Machine backup completed successfully
 
 ### Post-Reboot Actions
 1. Verify Docker Desktop launches cleanly

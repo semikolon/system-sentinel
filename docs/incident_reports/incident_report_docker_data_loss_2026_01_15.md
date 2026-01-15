@@ -1,6 +1,7 @@
 # Incident Report: Docker Desktop Data Loss
 **Date:** 2026-01-14 (Night) / 2026-01-15 (Morning)
-**Impact:** Total loss of local Docker images, containers, and volumes (approximately 228GB virtual disk).
+**Impact:** Total loss of local Docker images, containers, and volumes.
+**Note:** Docker.raw is a sparse file on APFS—logical size (shown by `ls -lh`) may appear as 64GB+ but actual disk consumption (`du -h`) is typically 50-70% less.
 **Duration:** ~20 minutes from hang discovery to data loss confirmation.
 
 ## Summary
