@@ -21,11 +21,12 @@ docker builder prune -af                     # Nuclear: remove ALL build cache
 ```
 
 ### Remote Server (old containers/images)
-Create `.kamal/hooks/post-deploy`:
 ```bash
-#!/bin/bash
 kamal prune all  # Keeps last 5 deployments
 ```
+
+### ✅ IMPLEMENTED: brf-auto Post-Deploy Hook
+Both cleanups now run automatically after each Kamal deploy via `.kamal/hooks/post-deploy` (commit d2c90c9). Fails gracefully - cleanup errors won't block deploys.
 
 ### Alternative to Docker Desktop: OrbStack
 - 0.8GB RAM (vs 2.4GB Docker Desktop)
@@ -49,20 +50,21 @@ The 228GB boot disk is chronically near capacity due to:
 
 ## Detailed Breakdown
 
-### 1. Docker (11GB physical)
+### 1. Docker (27GB after BuildKit bloat)
 
 ```
-Docker.raw logical size: 228GB (sparse file illusion)
-Docker.raw physical size: 11GB (actual disk usage)
+Docker.raw: APFS sparse file (logical size misleading)
+Physical size: 11GB → 27GB (after Kamal deploys)
 
+Breakdown (pre-bloat):
 TYPE            SIZE        RECLAIMABLE
 Images          1.182GB     165.9kB (0%)
 Containers      90.11kB     20.48kB (22%)
-Local Volumes   9.859GB     3.756kB (0%)
-Build Cache     0B          0B
+Local Volumes   9.859GB     0B (Graphiti data!)
+Build Cache     ~16GB       ~16GB (the culprit)
 ```
 
-**Note**: Docker.raw is an APFS sparse file. The 228GB "logical size" is NOT actual disk consumption. Physical size is ~11GB.
+**Note**: Docker.raw is an APFS sparse file. Run `docker builder prune -af` after reboot to reclaim BuildKit cache.
 
 **Warning**: Volumes contain FalkorDB/Graphiti data. Do NOT prune volumes.
 
@@ -171,8 +173,8 @@ rm -rf ~/.claude/logs/*.log  # Keep recent
 
 **Rust target folders:**
 ```
-sentinel-ui/src-tauri/target: 3.9GB ✅ Safe to delete
-system-sentinel/target: 617MB ✅ Safe to delete
+sentinel-ui/src-tauri/target: 3.9GB ✅ DELETED 2026-01-15
+system-sentinel/target: 617MB ✅ DELETED 2026-01-15
 ```
 
 **node_modules found:**
@@ -197,21 +199,18 @@ du -sh /Applications/* | sort -hr | head -20
 
 ## Quick Recovery Commands
 
-### Tier 1: Safe, Immediate (~8-10GB)
+### Tier 1: Safe, Immediate
 
+**Already done (2026-01-15):**
+- ✅ Rust target folders (~4.5GB)
+- ✅ Claude debug/hooks cache (~1.7GB)
+
+**Still available:**
 ```bash
-# Rust build artifacts (will rebuild on next compile)
-rm -rf ~/Projects/system-sentinel/sentinel-ui/src-tauri/target
-rm -rf ~/Projects/system-sentinel/target
-
 # Caches (apps will recreate as needed)
-rm -rf ~/Library/Caches/com.spotify.client
-rm -rf ~/Library/Caches/ms-playwright
-rm -rf ~/Library/Caches/Arc
-
-# Claude Code debug/cache
-rm -rf ~/.claude/debug/*
-rm -rf ~/.claude/hooks/cache
+rm -rf ~/Library/Caches/com.spotify.client  # 2.3GB
+rm -rf ~/Library/Caches/ms-playwright       # 1.6GB
+rm -rf ~/Library/Caches/Arc                 # 1.2GB
 ```
 
 ### Tier 2: Review First (~4-5GB)
@@ -234,16 +233,19 @@ rm -rf ~/Projects/Archived\ Code/yoga-pose-simulation/node_modules
 
 ## Long-term Recommendations
 
-1. **Set Docker disk limit**: Docker Desktop → Settings → Resources → Disk image size → 32GB max
-2. **Periodic cache clearing**: Monthly clear browser/app caches
-3. **Clean Rust targets**: Add `cargo clean` to project maintenance routine
-4. **Archive old projects**: Move to external drive or delete node_modules in archived projects
-5. **Consider larger boot disk**: 228GB is tight for active development work
+1. ✅ **Auto-clean Kamal deploys**: Implemented in brf-auto post-deploy hook
+2. **Set Docker disk limit**: Docker Desktop → Settings → Resources → Disk image size → 32GB max
+3. **Consider OrbStack**: Drop-in Docker Desktop replacement with auto disk reclaim
+4. **Periodic cache clearing**: Monthly clear browser/app caches
+5. **Clean Rust targets**: Add `cargo clean` to project maintenance routine
+6. **Archive old projects**: Move to external drive or delete node_modules in archived projects
 
 ---
 
 ## Post-Analysis Status
 
-After this analysis, the user can reclaim **12-15GB immediately** with safe commands above, bringing free space from 16GB to ~28-31GB (87% → 78% utilization).
+**Reclaimed so far**: ~6GB (Rust targets + Claude cache)
+**Pending**: `docker builder prune -af` after reboot (~16GB BuildKit cache)
+**Prevention**: Auto-cleanup now active for future Kamal deploys
 
-For sustainable disk management, consider the 228GB constraint when deciding which development tools and apps to keep active.
+For sustainable disk management, consider OrbStack migration (auto disk reclaim) or the 228GB constraint when deciding which development tools to keep active.
