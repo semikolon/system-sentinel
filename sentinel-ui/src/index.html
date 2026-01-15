@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>System Sentinel</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div id="app">
+      <h1>
+        <div id="status-dot" class="status-dot"></div>
+        System Sentinel
+      </h1>
+
+      <div class="metrics-grid">
+        <div class="metric-card">
+          <div class="label">Memory Usage</div>
+          <div id="mem-value" class="value">0%</div>
+          <div class="progress-container">
+            <div id="mem-bar" class="progress-bar" style="width: 0%"></div>
+          </div>
+          <div id="mem-detail" style="font-size: 0.8rem; color: #64748b; margin-top: 5px;">0 / 0 GB</div>
+        </div>
+
+        <div class="metric-card">
+          <div class="label">Swap Pressure</div>
+          <div id="swap-value" class="value">0%</div>
+          <div class="progress-container">
+            <div id="swap-bar" class="progress-bar" style="width: 0%; background: linear-gradient(90deg, #f59e0b, #ef4444);"></div>
+          </div>
+          <div id="swap-detail" style="font-size: 0.8rem; color: #64748b; margin-top: 5px;">0 / 0 GB</div>
+        </div>
+      </div>
+
+      <div class="metric-card" style="margin-bottom: 20px;">
+        <div class="label">Growth Rate</div>
+        <div id="growth-value" class="value">0.0 GB/h</div>
+        <div style="font-size: 0.8rem; color: #64748b; margin-top: 5px;">30-minute rolling average</div>
+      </div>
+
+      <div class="process-list">
+        <div class="label" style="font-size: 0.7rem; color: #475569; text-transform: uppercase; margin-bottom: 10px;">Top Resource Consumers</div>
+        <div id="process-items">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+
+      <div class="footer">
+        Sentinel v2.2 • Connected to Daemon
+      </div>
+    </div>
+    <script type="module" src="main.js"></script>
+  </body>
+</html>

@@ -8,6 +8,7 @@ mod detector;
 mod metrics;
 mod narration;
 mod notifier;
+mod server;
 
 use anyhow::Result;
 use std::time::Duration;
@@ -19,6 +20,8 @@ use crate::config::Config;
 use crate::detector::AnomalyDetector;
 use crate::metrics::MetricsCollector;
 use crate::notifier::Notifier;
+use crate::server::IpcServer;
+use std::sync::Arc;
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -42,6 +45,17 @@ async fn main() -> Result<()> {
     let mut detector = AnomalyDetector::new(&config);
     let notifier = Notifier::new(&config);
 
+    // Initialise IPC Server
+    let socket_path = "/tmp/system-sentinel.soc";
+    let (server, tx) = IpcServer::new(socket_path);
+    
+    // Start IPC server in background
+    tokio::spawn(async move {
+        if let Err(e) = server.run().await {
+            error!("IPC Server failed: {}", e);
+        }
+    });
+
     // Main monitoring loop
     let mut check_interval = interval(Duration::from_secs(config.general.check_interval_seconds));
 
@@ -63,6 +77,9 @@ async fn main() -> Result<()> {
                         error!("Failed to send notification: {}", e);
                     }
                 }
+
+                // Broadcast metrics to UI
+                let _ = tx.send(Arc::new(metrics));
             }
             _ = signal::ctrl_c() => {
                 info!("Shutdown signal received, exiting...");

@@ -35,7 +35,11 @@ Auditory awareness via your existing `tts_daemon`.
 The sentinel now provides sound "hints" to the daemon for immediate severity awareness.
 - **Warning**: Plays `sounds/subtle/alien_button.wav` (A light, high-tech interface click).
 - **Critical**: Plays `sounds/unused/Futuristic Hum 2133.wav` (The ominous, heavy atmosphere you selected).
-- **Intelligence**: Just like the visual alerts, these sounds are governed by the damping and correlation logic to ensure they only fire when truly necessary.
+### 8. Time Machine Diagnosis (Error 92)
+Resolved the "Illegal byte sequence" mystery that caused persistent USB disk thrashing.
+- **Diagnosis**: Confirmed that hundreds of legacy files (from a 2011 MBP backup) use decomposed Unicode (NFD), which crashes the modern APFS Time Machine thinning process.
+- **Ghost Backups**: Identified a mismatch where Time Machine was trying to thin snapshots that no longer existed in the APFS index.
+- **Solution**: Formulated a safe fix via Time Machine manifest reset (Remove/Re-add disk) and a local filename normalization scan using `convmv`.
 
 ---
 

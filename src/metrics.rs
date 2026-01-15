@@ -2,10 +2,11 @@
 
 use std::collections::{VecDeque, HashMap};
 use sysinfo::{System, ProcessesToUpdate, MemoryRefreshKind, ProcessRefreshKind};
+use serde::{Serialize, Deserialize};
 use tracing::debug;
 
 /// Snapshot of system metrics at a point in time
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SystemMetrics {
     pub timestamp: chrono::DateTime<chrono::Local>,
 
@@ -35,7 +36,7 @@ pub struct SystemMetrics {
     pub memory_growth_rate: Option<f64>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ProcessInfo {
     pub pid: u32,
     pub parent_pid: Option<u32>,
@@ -44,6 +45,44 @@ pub struct ProcessInfo {
     pub memory_mb: f64,
     pub cpu_usage: f32,
     pub exe: Option<String>,
+}
+
+impl ProcessInfo {
+    /// Returns a human-friendly name for the process.
+    /// Resolves generic names like "Electron" or "java" to their app bundle names if possible.
+    pub fn human_name(&self) -> String {
+        let name = self.name.replace(" (Group)", "");
+
+        // Heuristics for generic names that are often just runners for a real app
+        let names_to_resolve = [
+            "Electron", "Electron Helper", "java", "Python", "node", "ruby", "Web Content"
+        ];
+        
+        let needs_resolution = names_to_resolve.iter().any(|&n| name.contains(n));
+
+        if needs_resolution && self.exe.is_some() {
+            if let Some(exe_path) = &self.exe {
+                if let Some(app_name) = extract_app_name(exe_path) {
+                    return app_name;
+                }
+            }
+        }
+
+        name
+    }
+}
+
+/// Helper to extract \"App Name\" from a path containing .app
+/// e.g. \"/Applications/Visual Studio Code.app/Contents/MacOS/Electron\" -> \"Visual Studio Code\"
+fn extract_app_name(path: &str) -> Option<String> {
+    if let Some(idx) = path.find(".app") {
+        // Find the last slash before the .app
+        let prefix = &path[..idx];
+        if let Some(slash_idx) = prefix.rfind('/') {
+            return Some(prefix[slash_idx + 1..].to_string());
+        }
+    }
+    None
 }
 
 /// Collects system metrics with historical tracking for rate calculations
@@ -189,7 +228,7 @@ impl MetricsCollector {
         for info in all_procs.values() {
             if let Some(exe_path) = &info.exe {
                 // Heuristic: If path contains ".app/", it's likely an application
-                if let Some(app_name) = self.extract_app_name(exe_path) {
+                if let Some(app_name) = extract_app_name(exe_path) {
                     // Check if parent is NOT part of the same app (found a root)
                     let is_root = match info.parent_pid {
                         Some(ppid) => {
@@ -286,18 +325,6 @@ impl MetricsCollector {
         Some(slope_gb_per_hour)
     }
 
-    /// Helper to extract "App Name" from a path containing .app
-    /// e.g. "/Applications/Visual Studio Code.app/Contents/MacOS/Electron" -> "Visual Studio Code"
-    fn extract_app_name(&self, path: &str) -> Option<String> {
-        if let Some(idx) = path.find(".app") {
-            // Find the last slash before the .app
-            let prefix = &path[..idx];
-            if let Some(slash_idx) = prefix.rfind('/') {
-                return Some(prefix[slash_idx + 1..].to_string());
-            }
-        }
-        None
-    }
 
     /// Bridges gaps in the process tree by calling the system 'ps' utility.
     /// 'ps' has special kernel permissions to see parent/child relationships

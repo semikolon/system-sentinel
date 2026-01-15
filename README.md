@@ -2,10 +2,15 @@
 
 A low-overhead, Rust-native system health monitor for macOS. It watches your system resources and alerts you via Hammerspoon when things go wrong.
 
-## Features
-- **Sustained Load Detection**: Alerts only after 2 minutes of high CPU load to avoid false positives.
-- **Auto-Discovery Process Aggregation**: Automatically groups and tracks memory for process families (e.g., "Ghostty", "Electron", "Arc") without manual configuration.
-- **Smart Alerts**: Distinguishes between transient spikes and real problems.
+- **Intelligent Monitoring (IQ Upgrade)**:
+    - **Damping**: Ignores transient spikes; alerts only fire after 3 consecutive breaches.
+    - **Hysteresis**: Prevents alert "flapping" by using recovery margins.
+    - **Cross-Metric Correlation**: Mutes growth alerts unless the system is actually under memory or swap pressure.
+    - **Correlated Swap Alerting**: Suppresses swap alerts if RAM usage is low (opportunistic swap).
+- **Auditory Awareness**: 
+    - **Narration**: Integrated with `tts_daemon` for brief, spoken status updates via Unix socket.
+    - **Sound Hints**: Distinct auditory signals for Warning vs. Critical states (Ominous vs. Subtle).
+- **Auto-Discovery**: Automatically groups and tracks memory for process families (Ghostty, Electron, etc.).
 
 ## Configuration
 Config file location: `~/.config/system-sentinel/config.toml`

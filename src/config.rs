@@ -5,7 +5,7 @@ use serde::Deserialize;
 use std::fs;
 use std::path::PathBuf;
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Clone)]
 pub struct Config {
     #[serde(default)]
     pub general: GeneralConfig,
@@ -17,15 +17,17 @@ pub struct Config {
     pub notification: NotificationConfig,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Clone)]
 pub struct GeneralConfig {
     #[serde(default = "default_check_interval")]
     pub check_interval_seconds: u64,
     #[serde(default = "default_log_file")]
     pub log_file: String,
+    #[serde(default = "default_ipc_socket")]
+    pub ipc_socket: String,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Clone)]
 pub struct ThresholdConfig {
     #[serde(default = "default_memory_warning")]
     pub memory_warning: f64,
@@ -47,7 +49,7 @@ pub struct ThresholdConfig {
     pub recovery_margin: f64,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Clone)]
 pub struct DetectionConfig {
     #[serde(default = "default_process_watchlist")]
     pub process_watchlist: Vec<String>,
@@ -59,7 +61,7 @@ pub struct DetectionConfig {
     pub persistent_breach_threshold: u32,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Clone)]
 pub struct NotificationConfig {
     #[serde(default = "default_use_hammerspoon")]
     pub use_hammerspoon: bool,
@@ -99,6 +101,7 @@ impl Default for GeneralConfig {
         Self {
             check_interval_seconds: default_check_interval(),
             log_file: default_log_file(),
+            ipc_socket: default_ipc_socket(),
         }
     }
 }
@@ -178,3 +181,4 @@ impl Default for Config {
         }
     }
 }
+fn default_ipc_socket() -> String { "/tmp/system-sentinel.soc".to_string() }

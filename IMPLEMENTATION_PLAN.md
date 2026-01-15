@@ -2,8 +2,8 @@
 
 **Project**: system-sentinel
 **Created**: 2026-01-11
-**Updated**: 2026-01-11 19:15 CET (v2.1 - Tier 0 daemon operational)
-**Status**: Phase 1 Complete - Tier 0 daemon running
+**Updated**: 2026-01-15 10:25 CET (v2.2 - Intelligent Tier 0 live)
+**Status**: Phase 2 Complete - Intelligent Damping & Correlation Operational
 **Origin**: Post-mortem from Ghostty 70GB memory leak incident
 
 ---
@@ -437,36 +437,39 @@ async def suggest_kill(args):
 **Status (2026-01-11 19:06)**: Tier 0 daemon ready. Not yet installed as LaunchAgent.
 Next step: `launchctl load` the plist, then test notifications work.
 
-### Phase 2: Intelligence Layer
-- [ ] Python wrapper for Claude Agent SDK
-- [ ] Tier 1 classification endpoint
-- [ ] Tier 2 diagnosis endpoint
-- [ ] Token budget tracking
-- [ ] IPC between Rust and Python
+### Phase 2: Local Intelligence Upgrade (COMPLETE ✅)
+- [x] **Damping (Persistence)**: Alerts fire only after 3 consecutive breaches.
+- [x] **Hysteresis (Sticky States)**: Recovery margins prevent alert flapping.
+- [x] **Cross-Metric Correlation**: Mute growth alerts unless system is under pressure.
+- [x] **Correlated Swap Alerting**: Suppress swap alerts if memory usage is low.
+- [x] **Auditory Awareness**: Integration with `tts_daemon` for spoken alerts.
+- [x] **Sound Hints**: Warning vs Critical sound effects.
 
-### Phase 3: Menu Bar App (Tauri)
-- [ ] Tauri project setup
-- [ ] System tray icon with state
-- [ ] Dropdown panel UI
-- [ ] Metrics display
-- [ ] Chat interface
-- [ ] IPC with metrics daemon
+### Phase 2.5: Intelligence Polish (Next)
+- [ ] **Bundle Name Resolution**: Resolve generic names (Electron, java) to human names (Code, PyCharm).
+- [ ] **Dynamic Thresholding**: Store baseline metrics to auto-adjust thresholds.
+
+### Phase 3: Menu Bar App (Tauri 2.0)
+- [ ] Tauri project setup and IPC infrastructure.
+- [ ] System tray icon with health states (🟢/🟡/🔴).
+- [ ] Dropdown popover with metrics and "One-Click Remediation".
 
 ### Phase 4: Autonomous Actions
-- [ ] Protected process list
-- [ ] Action confirmation flow
-- [ ] Kill process capability
-- [ ] Safe cleanup actions
-- [ ] Audit logging
-- [ ] Undo capability where possible
+- [ ] Protected process whitelist.
+- [ ] Kill process capability and safety confirmation flow.
+- [ ] System-wide audit log of actions taken.
 
-### Phase 5: Polish & Integration
+### Phase 5: External Intelligence Layer (Future)
+- [ ] Python wrapper for Claude Agent SDK.
+- [ ] Tier 1/2 diagnosis endpoints via Gemini/Sonnet.
+
+### Phase 6: Polish & Integration
 - [ ] Graphiti integration (store incidents)
 - [ ] GPU/Neural Engine monitoring
 - [ ] User preference learning
 - [ ] Cross-session pattern recognition
 
-### Phase 6: Intelligent Automation (Future Vision)
+### Phase 7: Intelligent Automation (Future Vision)
 - [ ] **Auto-GitHub Issue Submission**: When detecting patterns matching known bugs
   - Detect Ghostty memory leak pattern → draft GitHub issue with diagnostic data
   - Include system specs, memory timeline, repro conditions

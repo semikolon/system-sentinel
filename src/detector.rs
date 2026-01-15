@@ -370,20 +370,7 @@ impl AnomalyDetector {
             for watched in watchlist {
                 if proc_name_lower.contains(&watched.to_lowercase()) {
                     if proc.memory_mb >= threshold_mb as f64 {
-                        // Resolve generic names for watchlist matches too
-                        let mut name = proc.name.replace(" (Group)", "");
-                        if (name == "Electron" || name == "Electron Helper") && proc.exe.is_some() {
-                            if let Some(exe_path) = &proc.exe {
-                                if let Some(start) = exe_path.find("/Applications/") {
-                                    if let Some(end) = exe_path[start..].find(".app/") {
-                                            let app_path = &exe_path[start..start+end];
-                                            if let Some(slash) = app_path.rfind('/') {
-                                                name = app_path[slash+1..].to_string();
-                                            }
-                                    }
-                                }
-                            }
-                        }
+                        let name = proc.human_name();
 
                         return Some(Anomaly {
                             anomaly_type: AnomalyType::ProcessWatchlist,
@@ -442,24 +429,7 @@ impl AnomalyDetector {
         all_procs.sort_by(|a, b| b.memory_bytes.cmp(&a.memory_bytes));
 
         if let Some(top) = all_procs.first() {
-            // Remove "(Group)" for brevity if present
-            let mut name = top.name.replace(" (Group)", "");
-
-            // Refine generic names like "Electron" using the executable path
-            if (name == "Electron" || name == "Electron Helper") && top.exe.is_some() {
-                if let Some(exe_path) = &top.exe {
-                    // Try to find /Applications/AppName.app/
-                    if let Some(start) = exe_path.find("/Applications/") {
-                        if let Some(end) = exe_path[start..].find(".app/") {
-                             // Extract "Beeper" from "/Applications/Beeper.app/..."
-                             let app_path = &exe_path[start..start+end];
-                             if let Some(slash) = app_path.rfind('/') {
-                                 name = app_path[slash+1..].to_string();
-                             }
-                        }
-                    }
-                }
-            }
+            let name = top.human_name();
 
             // Round to integer GB for brevity
             format!("{} ({:.0}GB)", name, top.memory_mb / 1024.0)
@@ -477,21 +447,7 @@ impl AnomalyDetector {
         all_procs.sort_by(|a, b| b.cpu_usage.partial_cmp(&a.cpu_usage).unwrap_or(std::cmp::Ordering::Equal));
 
         if let Some(top) = all_procs.first() {
-            let mut name = top.name.replace(" (Group)", "");
-            
-            // Refine generic names
-            if (name == "Electron" || name == "Electron Helper") && top.exe.is_some() {
-                if let Some(exe_path) = &top.exe {
-                    if let Some(start) = exe_path.find("/Applications/") {
-                        if let Some(end) = exe_path[start..].find(".app/") {
-                             let app_path = &exe_path[start..start+end];
-                             if let Some(slash) = app_path.rfind('/') {
-                                 name = app_path[slash+1..].to_string();
-                             }
-                        }
-                    }
-                }
-            }
+            let name = top.human_name();
 
             format!("{} ({:.0}%)", name, top.cpu_usage)
         } else {
@@ -500,71 +456,14 @@ impl AnomalyDetector {
     }
 }
 
-// Implement Clone for Config components that need it
-impl Clone for crate::config::GeneralConfig {
-    fn clone(&self) -> Self {
-        Self {
-            check_interval_seconds: self.check_interval_seconds,
-            log_file: self.log_file.clone(),
-        }
-    }
-}
 
-impl Clone for crate::config::ThresholdConfig {
-    fn clone(&self) -> Self {
-        Self {
-            memory_warning: self.memory_warning,
-            memory_critical: self.memory_critical,
-            swap_warning: self.swap_warning,
-            swap_critical: self.swap_critical,
-            load_warning: self.load_warning,
-            load_critical: self.load_critical,
-            memory_growth_rate_warning: self.memory_growth_rate_warning,
-            memory_growth_rate_critical: self.memory_growth_rate_critical,
-            recovery_margin: self.recovery_margin,
-        }
-    }
-}
 
-impl Clone for crate::config::DetectionConfig {
-    fn clone(&self) -> Self {
-        Self {
-            process_watchlist: self.process_watchlist.clone(),
-            process_memory_threshold_mb: self.process_memory_threshold_mb,
-            notification_cooldown_minutes: self.notification_cooldown_minutes,
-            persistent_breach_threshold: self.persistent_breach_threshold,
-        }
-    }
-}
-
-impl Clone for crate::config::NotificationConfig {
-    fn clone(&self) -> Self {
-        Self {
-            use_hammerspoon: self.use_hammerspoon,
-            fallback_to_terminal_notifier: self.fallback_to_terminal_notifier,
-            warning_color: self.warning_color.clone(),
-            critical_color: self.critical_color.clone(),
-        }
-    }
-}
-
-impl Clone for crate::config::Config {
-    fn clone(&self) -> Self {
-        Self {
-            general: self.general.clone(),
-            thresholds: self.thresholds.clone(),
-            detection: self.detection.clone(),
-            notification: self.notification.clone(),
-        }
-    }
-}
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::metrics::SystemMetrics;
     use crate::config::Config;
-    use std::time::Duration;
 
     fn mock_metrics(mem: f64, swap: f64, growth: Option<f64>) -> SystemMetrics {
         SystemMetrics {
