@@ -1,16 +1,46 @@
 # Deep Disk Space Analysis - Mac Mini M2
 
-**Date**: 2026-01-15
-**Boot Disk**: 228GB total, 178GB used (78%), 16GB free after reboot
-**Triggered by**: Docker crash due to disk exhaustion
+**Date**: 2026-01-15 (Updated 20:00 CET - Second Incident)
+**Boot Disk**: 228GB total
+**Status**: RECURRING CRISIS - Docker grew from 11GB to 27GB in ONE DAY
+
+## Critical Finding: Docker.raw Growth Root Cause
+
+**Docker.raw grew from 11GB → 27GB in ~4 hours** due to:
+1. **BuildKit cache** from Kamal deployments (builds multi-arch images, caches ALL layers)
+2. **Graphiti/FalkorDB** knowledge graph data accumulation
+
+**Symptoms**: "com.docker.virtualization: process terminated unexpectedly: use of closed network connection" = disk exhaustion killing Docker VM.
+
+## Solution: Kamal Cleanup Strategy
+
+### Local Mac (BuildKit cache - the BIG one)
+```bash
+docker builder prune -f --keep-storage=5GB  # After each deploy
+docker builder prune -af                     # Nuclear: remove ALL build cache
+```
+
+### Remote Server (old containers/images)
+Create `.kamal/hooks/post-deploy`:
+```bash
+#!/bin/bash
+kamal prune all  # Keeps last 5 deployments
+```
+
+### Alternative to Docker Desktop: OrbStack
+- 0.8GB RAM (vs 2.4GB Docker Desktop)
+- Automatic disk reclaim (Docker Desktop NEVER auto-shrinks)
+- `brew install orbstack` - drop-in replacement
+
+---
 
 ## Executive Summary
 
 The 228GB boot disk is chronically near capacity due to:
-1. **Development artifacts** (~8GB reclaimable): Rust target folders, node_modules
-2. **Application caches** (~6GB reclaimable): Spotify, Playwright, browsers
-3. **Claude Code data** (~2GB reclaimable): Debug logs, hook caches
-4. **Docker** (11GB): Mostly Graphiti data, not easily reclaimable
+1. **Docker** (27GB): BuildKit cache + Graphiti data - CLEAN BUILDKIT AFTER DEPLOYS
+2. **Development artifacts** (~8GB reclaimable): Rust target folders, node_modules
+3. **Application caches** (~6GB reclaimable): Spotify, Playwright, browsers
+4. **Claude Code data** (~2GB reclaimable): Debug logs, hook caches
 5. **Application Support** (19GB): Chrome, BeeperTexts, Zed, Discord
 
 **Quick wins can reclaim ~12-15GB** with minimal risk.
