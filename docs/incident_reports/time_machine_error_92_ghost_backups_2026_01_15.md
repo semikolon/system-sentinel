@@ -40,3 +40,45 @@ sudo convmv -r -f utf8 -t utf8 --nfc --nfd --notest /Users
 ## 4. Key Learnings
 - **Error 92** in Time Machine on APFS is almost always a filename encoding or metadata collision, not a hardware failure.
 - **Resetting the association** (Remove/Re-add) is a non-destructive way to clear manifest corruption.
+
+---
+
+## 5. Follow-up Incident: Disk Space Crisis (2026-01-15 15:00 CET)
+
+### Symptom
+- Docker Desktop crashed with "write ... init.log: no space left on device"
+- Boot disk at **93% capacity** (only 15GB free of 228GB)
+- Time Machine backup restarted after previous failure due to low disk space
+- Docker daemon hung: `docker ps` does not respond
+
+### Current Status (15:25 CET)
+- **Time Machine**: 92.4% complete, ~2 minutes remaining, writing to FredrikBackup (332GB free)
+- **Docker**: Daemon unresponsive. Error dialog displayed. Multiple zombie processes visible.
+- **Root cause**: Boot disk exhaustion prevented Docker VM writes
+
+### Disk Space Analysis
+| Location | Size | Notes |
+|----------|------|-------|
+| Docker container | 11GB | Fresh after yesterday's data loss incident |
+| ~/Library/Caches | 8.5GB | Browser/app caches |
+| ~/Library/Containers | 12GB | Docker + sandboxed apps |
+| Local TM snapshot | ~1GB | Will be released after backup completes |
+
+### Recovery Plan
+1. ✅ **Wait for Time Machine to complete** - DONE (15:28 CET, now in ThinningPostBackup phase)
+2. **Reboot** - Cleanest recovery path. Will:
+   - Kill all zombie Docker processes
+   - Release local TM snapshot (~1GB)
+   - Clear temporary files and stuck file handles
+   - Give Docker daemon a fresh start
+
+### Risk Assessment
+- **HIGH**: 15GB is critically low for development work
+- **MEDIUM**: Docker may need Docker.raw deletion if daemon won't recover (would lose all images/containers AGAIN)
+- **LOW**: Time Machine backup is healthy and completing successfully
+
+### Post-Reboot Actions
+1. Verify Docker Desktop launches cleanly
+2. Run `docker system prune -a` if Docker has accumulated cruft
+3. Deep disk space analysis to identify chronic space consumers
+4. Consider setting Docker Desktop disk limit (Settings → Resources → Disk image size)
