@@ -10,14 +10,31 @@ When booting the Mac Mini M2, the 4K monitor connected via USB-C fails to activa
 
 HDMI-connected displays work correctly on boot.
 
+## System Diagnostics (2026-01-15)
+
+**Monitor**: Acer XV322QK KV (31.5" 4K, 144Hz)
+**Connection**: USB-C via DisplayPort Alt Mode (NOT Thunderbolt protocol)
+**Cable status**: Using DP Alt Mode, not showing as Thunderbolt device
+
+```
+Thunderbolt/USB4 Bus: "No device connected"
+DisplayPortPinAssignment: Yes (DP Alt Mode active)
+Resolution: 5120x2880 @ 144Hz (working when detected)
+```
+
+**Key finding**: The monitor uses **DisplayPort Alt Mode** over USB-C, which is different from Thunderbolt. This explains the boot detection issue - DP Alt Mode has different initialization timing than native Thunderbolt.
+
+**Cable question**: If the cable doesn't have a ⚡ Thunderbolt logo or "TB4/40Gbps" rating, it's likely a USB-C/DP cable, not a true Thunderbolt 4 cable.
+
 ## Root Cause
 
 **Known Apple Silicon firmware/driver bug since macOS Big Sur 11.1.** Affects M1, M2, M3, and M4 Macs. Intel Macs are not affected. Apple has not acknowledged or fixed this issue.
 
-**Technical speculation:**
-- DisplayPort Alt Mode negotiation timing mismatch
-- USB-C initialization completes before monitor is ready
-- Boot firmware not fully aware of DP 1.2+ protocols
+**Technical explanation:**
+- DisplayPort Alt Mode negotiation timing mismatch at boot
+- Mac's USB-C initialization completes before monitor is ready to respond
+- Boot firmware sends DP probe, monitor doesn't respond in time, Mac gives up
+- After macOS loads, re-plugging cable triggers fresh negotiation (works)
 
 ## CONFIRMED FIXES (from extensive research)
 
