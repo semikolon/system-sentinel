@@ -2,68 +2,113 @@
 
 **Date**: 2026-01-15
 **Affected Device**: Marshall Bluetooth speaker + Mac Mini M2
-**Status**: Known limitation with workarounds
+**Status**: Intermittent - AVRCP negotiation issue
 
 ## Symptom
 
-When connected to a Marshall Bluetooth speaker, macOS volume keys (F11/F12) show visual feedback (dots go up/down) but the actual speaker volume does not change. Volume must be controlled via:
-- Physical controls on the speaker
-- Per-app volume sliders (YouTube, Spotify, etc.)
+macOS volume keys (F11/F12) **sometimes work** and **sometimes don't** with the Marshall Bluetooth speaker. When broken:
+- Volume slider moves visually but actual output doesn't change
+- Must use physical speaker knob or per-app volume
+
+**Key observation**: This is INTERMITTENT, not constant. It works sometimes.
 
 ## Root Cause
 
-**This is a Bluetooth audio protocol limitation, not a macOS bug.**
+**This is an AVRCP "Absolute Volume" negotiation issue, not a fixed protocol limitation.**
 
-Bluetooth audio devices report their capabilities to macOS via the A2DP (Advanced Audio Distribution Profile) protocol. Some speakers report themselves as having **independent volume control**, which causes macOS to:
-1. Disable software volume mixing for that device
-2. Send a fixed-level audio stream to the speaker
-3. Expect the speaker to handle its own volume
+### What's Happening
 
-Marshall speakers (like Stanmore, Acton, Kilburn) typically fall into this category—they're designed as "pro audio" devices where volume is managed on the device itself.
+Bluetooth audio uses two profiles:
+- **A2DP**: Audio streaming (the actual sound)
+- **AVRCP**: Remote control (volume, play/pause, track skip)
 
-**Why some devices work and others don't:**
-- Cheap earbuds: Often report no volume capability → macOS controls volume
-- Marshall/high-end speakers: Report independent volume → macOS defers to device
-- Some devices: Support both → Volume controllable from either end
+AVRCP 1.4+ introduced "Absolute Volume" - a feature where the host (Mac) and speaker coordinate volume levels. When negotiation succeeds, macOS volume controls work. When it fails, they don't.
 
-## Workarounds
+### Why It's Intermittent
 
-### 1. Use Physical Volume Knob (Intended Design)
-Marshall speakers have prominent analog volume knobs. This is the intended user experience.
+The AVRCP handshake can fail due to:
+1. **Connection timing**: If profiles initialize in wrong order
+2. **Bluetooth interference**: Wi-Fi, other devices on 2.4GHz
+3. **Pairing state corruption**: Cached connection parameters become stale
+4. **Firmware bugs**: On either Mac or speaker side
+5. **macOS updates**: Sonoma 14.4+ introduced regressions for some users
 
-### 2. Audio MIDI Setup Multi-Output Device
-Create a virtual audio device that allows software volume control:
+**This explains why it works sometimes**: When the AVRCP negotiation succeeds, volume works. When it fails, volume is disabled for that session.
+
+## Fixes (In Order of Effectiveness)
+
+### 1. Re-pair the Device (Most Effective)
+Forces fresh AVRCP negotiation:
+1. System Settings → Bluetooth
+2. Right-click Marshall speaker → **Remove**
+3. Turn speaker off, wait 10 seconds
+4. Turn speaker on, put in pairing mode
+5. Re-pair from Mac
+
+### 2. Reset Bluetooth Module
+Clears macOS Bluetooth stack state:
+1. Hold **Shift + Option** and click Bluetooth icon in menu bar
+2. Click **Reset the Bluetooth module** (if available)
+3. Or: `sudo pkill bluetoothd` in Terminal
+4. Reconnect device
+
+### 3. Power Cycle in Specific Order
+Sometimes fixes negotiation timing:
+1. Disconnect speaker from Mac
+2. Turn speaker OFF
+3. Turn speaker ON
+4. Wait 5 seconds
+5. Connect from Mac
+
+### 4. Check for Firmware Updates
+- Marshall speakers: Check Marshall Bluetooth app (iOS/Android)
+- macOS: Ensure running latest version (some fixes in point releases)
+
+### 5. Reduce Interference
+- Move speaker closer to Mac
+- Disable unused Bluetooth devices
+- Check for Wi-Fi congestion on 2.4GHz
+
+## Workarounds (If Fixes Don't Work)
+
+### Audio MIDI Setup Multi-Output Device
+Bypasses AVRCP volume entirely:
 1. Open **Audio MIDI Setup** (Applications → Utilities)
 2. Click **+** → **Create Multi-Output Device**
-3. Check your Marshall speaker AND a virtual output (like BlackHole or Zoom Audio Device)
-4. Select this new device as your sound output
+3. Check Marshall speaker AND a virtual output (BlackHole, Zoom Audio Device)
+4. Select this new device as sound output
 
-This routes audio through a mixer where macOS can apply volume before sending to the speaker.
-
-### 3. Proxy Audio Device (Homebrew)
+### Proxy Audio Device (Homebrew)
 ```bash
 brew install --cask proxy-audio-device
 ```
-After installation, configure via **Proxy Audio Device Settings** app. Enables media key control for problematic devices.
+Enables media key control for problematic devices.
 
-### 4. SoundSource (Paid App)
-[Rogue Amoeba SoundSource](https://rogueamoeba.com/soundsource/) provides per-app and per-device volume control that bypasses this limitation.
+### SoundSource (Paid App)
+[Rogue Amoeba SoundSource](https://rogueamoeba.com/soundsource/) - per-app/per-device volume control.
 
-## Why This Isn't a Bug
+## macOS Limitation
 
-Apple's position: The speaker manufacturer decides how volume should be handled. If Marshall reports "I handle my own volume," macOS respects that. This is by design for professional audio workflows where consistent output levels matter.
+**Unlike Windows and Android, macOS has NO setting to disable Absolute Volume.**
 
-**Comparison:**
-- Windows: Often ignores device capabilities and applies software volume anyway
-- macOS: Respects device-reported capabilities
-- iOS: Uses different Bluetooth profiles, may work differently
+- Windows: Registry key `DisableAbsoluteVolume`
+- Android: Developer Settings → "Disable absolute volume"
+- macOS: No equivalent option exists
+
+This means you cannot force macOS to always control volume locally.
 
 ## References
 
-- [Apple Community: Volume Control not working With Bluetooth Speaker](https://discussions.apple.com/thread/252364494)
-- [Apple Community: Mac volume control disabled when using external devices](https://discussions.apple.com/thread/255028132)
-- [MacPaw: External speakers not working on Mac](https://macpaw.com/how-to/external-speakers-not-working-mac)
+- [Apple Community: Volume control after Sonoma 14.4](https://discussions.apple.com/thread/255523029)
+- [Apple Community: Cannot change volume on Bluetooth devices](https://discussions.apple.com/thread/253711192)
+- [UMA Technology: Bluetooth Speaker Volume Control Not Working](https://umatechnology.org/solved-bluetooth-speaker-volume-control-not-working/)
 
-## Recommendation
+## Summary
 
-**Use the physical volume knob.** This is how Marshall designed the speaker to work. The workarounds above add complexity and potential audio quality issues. If software volume control is essential, consider speakers that advertise macOS compatibility (like Sonos or HomePod).
+| Behavior | Cause |
+|----------|-------|
+| Works sometimes | AVRCP negotiation succeeded |
+| Doesn't work | AVRCP negotiation failed |
+| Fix | Re-pair device to force fresh negotiation |
+
+**Bottom line**: Try re-pairing first. If the problem recurs frequently, use the Audio MIDI Setup workaround for consistent behavior.
