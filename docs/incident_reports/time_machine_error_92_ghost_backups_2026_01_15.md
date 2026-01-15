@@ -89,7 +89,60 @@ The deleted Docker.raw likely consumed **10-30GB actual disk space**, not 228GB.
 - **LOW**: Time Machine backup completed successfully
 
 ### Post-Reboot Actions
-1. Verify Docker Desktop launches cleanly
+1. ✅ Verify Docker Desktop launches cleanly - DONE
 2. Run `docker system prune -a` if Docker has accumulated cruft
-3. Deep disk space analysis to identify chronic space consumers
+3. ✅ Deep disk space analysis - DONE (see `disk_space_analysis_2026_01_15.md`)
 4. Consider setting Docker Desktop disk limit (Settings → Resources → Disk image size)
+
+### Post-Reboot Status (16:00 CET)
+- **Docker**: ✅ Running, both containers healthy (FalkorDB, BuildKit)
+- **Disk space**: 19GB free (up from 11GB after cache clearing)
+- **Time Machine**: Idle, last backup 15:50
+
+---
+
+## 6. Follow-up Incident: xcode_select_link Backup Warning (2026-01-15 16:15 CET)
+
+### Symptom
+Time Machine error dialog:
+> "Time Machine couldn't complete the backup to 'FredrikBackup'"
+> "/private/var/db/xcode_select_link" could not be backed up.
+
+### Diagnosis
+
+**This is a MINOR warning, not a critical failure.**
+
+```bash
+$ ls -la /private/var/db/xcode_select_link
+lrwxr-xr-x  1 root  wheel  35 Oct  8  2024 /private/var/db/xcode_select_link@ -> /Library/Developer/CommandLineTools
+```
+
+The file is just a **symlink** pointing to Xcode Command Line Tools. Time Machine sometimes has trouble backing up certain system-level symlinks in `/var/db/`.
+
+### Why This Isn't Critical
+
+1. **Easily recreatable**: Run `xcode-select --install` to regenerate
+2. **Not user data**: Just a pointer to developer tools
+3. **Backup otherwise succeeded**: The warning is informational, not fatal
+4. **The destination exists**: `/Library/Developer/CommandLineTools` IS backed up
+
+### Resolution Options
+
+**Option A: Ignore it** (recommended)
+The symlink can be recreated in seconds. Your actual data is backed up.
+
+**Option B: Exclude from backups**
+1. System Settings → Time Machine → Options
+2. Add `/private/var/db/xcode_select_link` to exclusions
+3. Prevents the warning on future backups
+
+**Option C: Recreate the symlink**
+```bash
+sudo xcode-select --reset
+```
+This rebuilds the symlink, which may resolve TM's issue with it.
+
+### Risk Assessment
+- **SEVERITY**: Low (informational warning)
+- **DATA LOSS RISK**: None (symlink is not user data)
+- **ACTION REQUIRED**: None (or exclude to silence warning)
