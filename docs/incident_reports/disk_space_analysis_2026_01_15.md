@@ -244,10 +244,41 @@ rm -rf ~/Projects/Archived\ Code/yoga-pose-simulation/node_modules
 
 ---
 
-## Post-Analysis Status
+## Incident Recovery Timeline (2026-01-15)
 
-**Reclaimed so far**: ~6GB (Rust targets + Claude cache)
-**Pending**: `docker builder prune -af` after reboot (~16GB BuildKit cache)
-**Prevention**: Auto-cleanup now active for future Kamal deploys
+### Trigger
+~20:00 CET: Docker Desktop crashed with "com.docker.virtualization: process terminated unexpectedly: use of closed network connection". Boot disk at 6.6GB free (97% full).
+
+### Investigation
+1. Discovered Docker.raw grew from 11GB → 27GB in ~4 hours
+2. Root cause: BuildKit cache accumulation from Kamal multi-arch builds
+3. Docker daemon hung - `docker system df` unresponsive
+
+### Recovery Steps Completed
+| Step | Action | Space Reclaimed |
+|------|--------|-----------------|
+| 1 | Deleted Rust target folders (system-sentinel) | ~4.5GB |
+| 2 | Deleted Claude debug + hooks cache | ~1.7GB |
+| 3 | Implemented brf-auto post-deploy auto-cleanup | (prevention) |
+
+**Disk free after cleanup**: 12GB (up from 6.6GB)
+
+### Pending Recovery (After Reboot)
+```bash
+# 1. Reboot to restore Docker daemon to healthy state
+# 2. Wait for Docker Desktop green icon + containers responsive
+# 3. Then run:
+docker builder prune -af   # Reclaims ~16GB BuildKit cache
+```
+
+**Expected final state**: ~25GB+ free, Docker.raw back to ~11GB
+
+### Prevention Implemented
+- brf-auto `.kamal/hooks/post-deploy` now auto-cleans after each deploy
+- Future consideration: OrbStack migration for automatic disk reclaim
+
+---
+
+## Post-Analysis Status
 
 For sustainable disk management, consider OrbStack migration (auto disk reclaim) or the 228GB constraint when deciding which development tools to keep active.
