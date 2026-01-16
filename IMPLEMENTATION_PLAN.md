@@ -469,6 +469,11 @@ See: `sentinel-ui/src-tauri/src/lib.rs:155` - fix deferred.
 
 ### Phase 5: AI Advisory Layer (Spec'd 2026-01-16)
 
+**Spec Files**: `docs/specs/phase5-ai-advisory/`
+- `requirements.md` - Functional and non-functional requirements
+- `design.md` - Architecture, SDK selection, UI design
+- `tasks.md` - 42 implementation tasks (~18.5h estimated, 1-2h with velocity)
+
 **Mode**: Advisory only - AI suggests, human confirms all actions with risk.
 
 **Decisions captured via /spec:**
@@ -520,7 +525,7 @@ System Sentinel fills the gap with intelligent anomaly detection + AI diagnosis.
   CLI wrapper approach (claude-agent-sdk) satisfies this by spawning actual `claude` process.
   Direct API approaches would lose all this context.
 
-- [ ] Streaming responses in popover UI
+- [x] Streaming responses in popover UI (Tauri events + SDK streaming)
 
 **Implementation tasks**:
 - [ ] Popover UI with chat interface
