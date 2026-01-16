@@ -492,9 +492,16 @@ Self-contained chat interface, not requiring separate CC window for simple queri
 **Complements CleanMyMac**: CMM license owned but not proactive/alerting enough.
 System Sentinel fills the gap with intelligent anomaly detection + AI diagnosis.
 
-**Research needed**:
-- [ ] macOS menu bar popover patterns (NSPopover vs custom window)
-- [ ] Claude Agent SDK / ACP integration in Rust/Tauri
+**Research completed (2026-01-16)**:
+- [x] macOS menu bar popover: **`tauri-nspopover-plugin`** (135★, MIT)
+  - https://github.com/freethinkel/tauri-nspopover-plugin
+  - Native NSPopover with auto-hide on focus loss
+  - YouTube tutorial: "Mastering Menu Bar Apps: Using Rust and Tauri for macOS"
+- [x] Claude Agent SDK / ACP integration options:
+  - **ACP Rust SDK**: `agentclientprotocol/rust-sdk` (36★) - Official
+  - **claude-agent-sdk** crate v0.1.1 - Full feature parity with Python SDK
+  - **zed-industries/claude-code-acp** (744★) - Zed's implementation
+  - Routes through CC session = no separate API cost ✓
 - [ ] Streaming responses in popover UI
 
 **Implementation tasks**:
