@@ -467,9 +467,42 @@ See: `sentinel-ui/src-tauri/src/lib.rs:155` - fix deferred.
 - [ ] Kill process capability and safety confirmation flow.
 - [ ] System-wide audit log of actions taken.
 
-### Phase 5: External Intelligence Layer (Future)
-- [ ] Python wrapper for Claude Agent SDK.
-- [ ] Tier 1/2 diagnosis endpoints via Gemini/Sonnet.
+### Phase 5: AI Advisory Layer (Spec'd 2026-01-16)
+
+**Mode**: Advisory only - AI suggests, human confirms all actions with risk.
+
+**Decisions captured via /spec:**
+| Question | Answer |
+|----------|--------|
+| Trigger | Threshold-based OR user-initiated |
+| Privacy | Full context (trust Claude) |
+| Surface | Menu bar popover chat UI (CleanMyMac-style) |
+| Cost | Route through Claude Code session (no separate API cost) |
+| Suggestions | AI asks permission for any risky actions |
+| Backend | Claude Agent SDK / ACP under the hood |
+| Latency | Async: notify when ready (TTS/notification/icon animation) |
+
+**UI Vision**: Native-feeling macOS menu bar popover that auto-hides on focus loss.
+Self-contained chat interface, not requiring separate CC window for simple queries.
+
+**Reference screenshots** (CleanMyMac menu bar UI for inspiration):
+- `/Users/fredrikbranstrom/Screenshots/Screenshot 2026-01-16 at 14.40.16.png`
+- `/Users/fredrikbranstrom/Screenshots/Screenshot 2026-01-16 at 14.38.29.png`
+
+**Complements CleanMyMac**: CMM license owned but not proactive/alerting enough.
+System Sentinel fills the gap with intelligent anomaly detection + AI diagnosis.
+
+**Research needed**:
+- [ ] macOS menu bar popover patterns (NSPopover vs custom window)
+- [ ] Claude Agent SDK / ACP integration in Rust/Tauri
+- [ ] Streaming responses in popover UI
+
+**Implementation tasks**:
+- [ ] Popover UI with chat interface
+- [ ] SDK/ACP integration for Claude queries
+- [ ] Context packaging (metrics, processes, history)
+- [ ] Async response handling with notification options
+- [ ] Permission flow for risky action suggestions
 
 ### Phase 6: Polish & Integration
 - [ ] Graphiti integration (store incidents)

@@ -17,7 +17,32 @@ Both phases are independent - either can be done alone, but together they provid
 
 ## Background: Why This Migration?
 
-### The Problem (2026-01-15 Incident)
+### The Case Against Docker Desktop on macOS
+
+Docker Desktop on macOS has been a **chronic source of instability** - both in this environment and across the developer community. The architectural reality is that Docker requires a Linux VM on macOS, and Docker Desktop's implementation of this has fundamental problems.
+
+**Three incidents in 48 hours (Jan 14-16, 2026):**
+
+| Date | Incident | Impact | Root Cause |
+|------|----------|--------|------------|
+| Jan 14-15 | Data loss during hung state troubleshooting | **Total loss** of images, containers, volumes | Docker.raw inside sandbox deleted during recovery attempt |
+| Jan 15 | BuildKit cache bloat: 11GB → 27GB in 4 hours | Disk crisis (97% full), Docker crash | Kamal buildx volumes grow unbounded, survive `docker builder prune` |
+| Jan 16 | Unexplained graceful VM termination | **All Claude Code sessions crashed** | Unknown - VM terminated while user away, then hung at "stopping" |
+
+**See**: `docs/incident_reports/` for detailed post-mortems.
+
+**Community-wide frustrations** ([HN](https://news.ycombinator.com/item?id=38807591), [GitHub](https://github.com/docker/for-mac/issues/6685), [Forums](https://forums.docker.com/t/docker-desktop-for-mac-simply-doesnt-work-anymore-is-there-an-alternative/138233)):
+
+- **Memory hogging**: Allocates half your RAM (7-8GB) for a VM when containers need hundreds of MB
+- **Disk never shrinks**: Docker.raw is an APFS sparse file that grows but **never auto-reclaims**
+- **Random crashes**: "Docker just randomly dies now" - common complaint across versions
+- **Stuck at "stopping"**: Known bug where Docker hangs in shutdown state indefinitely
+- **Certificate revocation (Jan 2025)**: Apple revoked Docker's Developer ID, breaking all Mac installations
+- **macOS Sequoia conflicts**: DNS and firewall bugs specific to latest macOS
+
+**Why OrbStack exists**: Built specifically to solve these problems. Native Swift app (not Electron), uses Apple's Virtualization.framework efficiently, **automatic disk reclaim**, 3-4x less RAM, starts in 2 seconds. Created because Docker Desktop is architecturally at odds with being a good macOS citizen.
+
+### The Specific Jan 15 Disk Incident
 
 Docker Desktop's BuildKit cache grew from 11GB → 27GB in 4 hours during Kamal deployments, crashing Docker and nearly filling the 228GB boot disk. Root cause: BuildKit stores cache in **volumes** that survive `docker builder prune`.
 
