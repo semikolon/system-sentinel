@@ -498,10 +498,28 @@ System Sentinel fills the gap with intelligent anomaly detection + AI diagnosis.
   - Native NSPopover with auto-hide on focus loss
   - YouTube tutorial: "Mastering Menu Bar Apps: Using Rust and Tauri for macOS"
 - [x] Claude Agent SDK / ACP integration options:
-  - **ACP Rust SDK**: `agentclientprotocol/rust-sdk` (36★) - Official
-  - **claude-agent-sdk** crate v0.1.1 - Full feature parity with Python SDK
-  - **zed-industries/claude-code-acp** (744★) - Zed's implementation
-  - Routes through CC session = no separate API cost ✓
+
+  | Solution | Stars | Approach | CLAUDE.md/MCP? |
+  |----------|-------|----------|----------------|
+  | **claude-agent-sdk** (crates.io) | - | CLI wrapper | ✅ Yes - spawns `claude` CLI |
+  | **ACP Rust SDK** | 36★ | Protocol | ⚠️ Depends on impl |
+  | **zed-industries/claude-code-acp** | 744★ | TypeScript | ✅ Yes (needs bridge) |
+  | Direct API | - | Raw HTTP | ❌ No context |
+
+  **Recommendation: `claude-agent-sdk` crate** because:
+  - Pure Rust (native Tauri)
+  - Spawns CC CLI → inherits global CLAUDE.md + MCP servers
+  - Hook system for permission callbacks
+  - No separate API cost
+
+  **Critical requirement**: Agent must inherit user's full CC environment:
+  - `~/.claude/CLAUDE.md` (global rules, system context)
+  - `~/.claude.json` MCP servers (Graphiti, PAL, Exa, etc.)
+  - Project CLAUDE.md when in project context
+
+  CLI wrapper approach (claude-agent-sdk) satisfies this by spawning actual `claude` process.
+  Direct API approaches would lose all this context.
+
 - [ ] Streaming responses in popover UI
 
 **Implementation tasks**:
