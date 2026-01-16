@@ -11,9 +11,11 @@
     "windows": [
       {
         "title": "System Sentinel",
-        "width": 340,
-        "height": 620,
-        "resizable": false,
+        "width": 380,
+        "height": 750,
+        "minWidth": 340,
+        "minHeight": 500,
+        "resizable": true,
         "fullscreen": false,
         "visible": false
       }

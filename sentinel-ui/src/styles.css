@@ -17,11 +17,12 @@
 body {
   margin: 0;
   display: flex;
-  place-items: center;
+  flex-direction: column;
   min-width: 320px;
   min-height: 100vh;
-  overflow: hidden;
-  background: rgba(15, 23, 42, 0.85); /* Slate 900 with glass opacity */
+  overflow-y: auto;
+  overflow-x: hidden;
+  background: rgba(15, 23, 42, 0.95); /* Slate 900 with glass opacity */
   backdrop-filter: blur(20px);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 12px;

@@ -104,10 +104,9 @@ pub fn run() {
                 ],
             )?;
 
-            // Build tray with initial healthy icon (disable template mode for colored icons)
-            let _tray = TrayIconBuilder::with_id(TRAY_ID)
+            // Build tray with initial healthy icon
+            let tray = TrayIconBuilder::with_id(TRAY_ID)
                 .icon(load_tray_icon(HealthState::Healthy))
-                .icon_as_template(false)
                 .tooltip("System Sentinel - Healthy")
                 .menu(&tray_menu)
                 .on_menu_event(|app, event| match event.id.as_ref() {
@@ -134,6 +133,9 @@ pub fn run() {
                     }
                 })
                 .build(app)?;
+
+            // CRITICAL: Disable template mode AFTER build for colored icons on macOS
+            tray.set_icon_as_template(false)?;
 
             // Start IPC Client using Tauri's async runtime
             tauri::async_runtime::spawn(async move {
