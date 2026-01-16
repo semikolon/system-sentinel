@@ -21,8 +21,10 @@ pub struct Config {
 pub struct GeneralConfig {
     #[serde(default = "default_check_interval")]
     pub check_interval_seconds: u64,
+    #[allow(dead_code)] // Reserved for future use
     #[serde(default = "default_log_file")]
     pub log_file: String,
+    #[allow(dead_code)] // Reserved for future use
     #[serde(default = "default_ipc_socket")]
     pub ipc_socket: String,
 }
