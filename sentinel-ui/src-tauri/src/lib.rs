@@ -132,8 +132,8 @@ pub fn run() {
                 })
                 .build(app)?;
 
-            // Start IPC Client
-            tokio::spawn(async move {
+            // Start IPC Client using Tauri's async runtime
+            tauri::async_runtime::spawn(async move {
                 if let Err(e) = run_ipc_client(handle).await {
                     error!("IPC client fatal error: {}", e);
                 }
