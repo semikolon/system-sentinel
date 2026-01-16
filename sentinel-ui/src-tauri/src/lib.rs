@@ -102,9 +102,10 @@ pub fn run() {
                 ],
             )?;
 
-            // Build tray with initial healthy icon
+            // Build tray with initial healthy icon (disable template mode for colored icons)
             let _tray = TrayIconBuilder::with_id(TRAY_ID)
                 .icon(load_tray_icon(HealthState::Healthy))
+                .icon_as_template(false)
                 .tooltip("System Sentinel - Healthy")
                 .menu(&tray_menu)
                 .on_menu_event(|app, event| match event.id.as_ref() {
