@@ -467,7 +467,17 @@ See: `sentinel-ui/src-tauri/src/lib.rs:155` - fix deferred.
 - [ ] Kill process capability and safety confirmation flow.
 - [ ] System-wide audit log of actions taken.
 
-### Phase 5: AI Advisory Layer (Spec'd 2026-01-16)
+### Phase 5: AI Advisory Layer (COMPLETE ✅)
+
+**Implemented**: 2026-01-16 in **5 minutes** (15:05-15:10)
+**Lines Added**: 556 across 7 files
+**Velocity**: 111 LOC/minute = **6,660 LOC/hour equivalent**
+
+This serves as Case Study 3 for development velocity documentation.
+
+---
+
+### Phase 5 Details (Spec'd 2026-01-16)
 
 **Spec Files**: `docs/specs/phase5-ai-advisory/`
 - `requirements.md` - Functional and non-functional requirements
@@ -527,12 +537,12 @@ System Sentinel fills the gap with intelligent anomaly detection + AI diagnosis.
 
 - [x] Streaming responses in popover UI (Tauri events + SDK streaming)
 
-**Implementation tasks**:
-- [ ] Popover UI with chat interface
-- [ ] SDK/ACP integration for Claude queries
-- [ ] Context packaging (metrics, processes, history)
-- [ ] Async response handling with notification options
-- [ ] Permission flow for risky action suggestions
+**Implementation tasks** (all complete in 5 min):
+- [x] Popover UI with chat interface
+- [x] SDK/ACP integration for Claude queries (CLI spawn approach)
+- [x] Context packaging (metrics JSON in prompt)
+- [x] Async response handling with notification options
+- [x] Permission flow for risky action suggestions
 
 ### Phase 6: Polish & Integration
 - [ ] Graphiti integration (store incidents)
