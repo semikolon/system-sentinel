@@ -151,8 +151,9 @@ pub fn run() {
 fn update_tray_state(app: &AppHandle, state: HealthState) {
     let tray_id = TrayIconId::new(TRAY_ID);
     if let Some(tray) = app.tray_by_id(&tray_id) {
-        // Update icon
+        // Update icon and ensure template mode is disabled for colored icons
         let _ = tray.set_icon(Some(load_tray_icon(state)));
+        let _ = tray.set_icon_as_template(false);
 
         // Update tooltip
         let tooltip = match state {
