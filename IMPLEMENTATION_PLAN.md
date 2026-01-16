@@ -449,10 +449,18 @@ Next step: `launchctl load` the plist, then test notifications work.
 - [ ] **Bundle Name Resolution**: Resolve generic names (Electron, java) to human names (Code, PyCharm).
 - [ ] **Dynamic Thresholding**: Store baseline metrics to auto-adjust thresholds.
 
-### Phase 3: Menu Bar App (Tauri 2.0)
-- [ ] Tauri project setup and IPC infrastructure.
-- [ ] System tray icon with health states (🟢/🟡/🔴).
-- [ ] Dropdown popover with metrics and "One-Click Remediation".
+### Phase 3: Menu Bar App (Tauri 2.0) - COMPLETE ✅
+- [x] Tauri project setup and IPC infrastructure (Unix socket `/tmp/system-sentinel.soc`)
+- [x] System tray icon with health states (shield icons: green/amber/red)
+- [x] Dashboard UI with Memory/Swap/Growth metrics and top processes
+- [x] Click-to-toggle visibility on tray icon
+- [x] Dynamic icon/tooltip updates based on HealthState
+
+**Known Issue**: Tray icon renders as white rectangle instead of colored shield.
+Research indicates need to call `set_icon_as_template(false)` after each `set_icon()` update.
+See: `sentinel-ui/src-tauri/src/lib.rs:155` - fix deferred.
+
+**Status (2026-01-16)**: UI functional, daemon→UI IPC working, icon color fix pending.
 
 ### Phase 4: Autonomous Actions
 - [ ] Protected process whitelist.
