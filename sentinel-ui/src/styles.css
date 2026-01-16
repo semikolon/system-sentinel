@@ -129,8 +129,176 @@ h1 {
   font-weight: 600;
 }
 
+/* Chat Section */
+.chat-section {
+  margin-top: 1.5rem;
+  background: rgba(30, 41, 59, 0.5);
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  overflow: hidden;
+}
+
+.chat-header {
+  padding: 0.75rem 1rem;
+  background: rgba(51, 65, 85, 0.5);
+  font-size: 0.8rem;
+  color: #94a3b8;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.chat-status {
+  font-size: 0.7rem;
+  color: #64748b;
+}
+
+.chat-status.thinking {
+  color: #3b82f6;
+}
+
+.chat-messages {
+  max-height: 150px;
+  overflow-y: auto;
+  padding: 0.75rem;
+}
+
+.chat-message {
+  margin-bottom: 0.75rem;
+}
+
+.chat-message.user .message-content {
+  background: #3b82f6;
+  color: white;
+  margin-left: 20%;
+  text-align: right;
+}
+
+.chat-message.assistant .message-content {
+  background: rgba(51, 65, 85, 0.8);
+  color: #e2e8f0;
+  margin-right: 20%;
+}
+
+.message-content {
+  padding: 0.5rem 0.75rem;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  line-height: 1.4;
+}
+
+.chat-input-container {
+  display: flex;
+  padding: 0.5rem;
+  gap: 0.5rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.chat-input {
+  flex: 1;
+  background: rgba(15, 23, 42, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  padding: 0.5rem 0.75rem;
+  color: #e2e8f0;
+  font-size: 0.85rem;
+}
+
+.chat-input:focus {
+  outline: none;
+  border-color: #3b82f6;
+}
+
+.chat-send {
+  background: #3b82f6;
+  border: none;
+  border-radius: 6px;
+  padding: 0.5rem 0.75rem;
+  color: white;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.chat-send:hover {
+  background: #2563eb;
+}
+
+.chat-send:disabled {
+  background: #475569;
+  cursor: not-allowed;
+}
+
+/* Action Card */
+.action-card {
+  margin-top: 1rem;
+  background: rgba(251, 191, 36, 0.1);
+  border: 1px solid rgba(251, 191, 36, 0.3);
+  border-radius: 10px;
+  padding: 1rem;
+}
+
+.action-card.hidden {
+  display: none;
+}
+
+.action-card.high-risk {
+  background: rgba(239, 68, 68, 0.1);
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
+.action-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.action-risk {
+  font-size: 0.75rem;
+  color: #fbbf24;
+}
+
+.action-card.high-risk .action-risk {
+  color: #ef4444;
+}
+
+.action-title {
+  font-weight: 600;
+  color: #f8fafc;
+}
+
+.action-description {
+  font-size: 0.85rem;
+  color: #94a3b8;
+  margin-bottom: 0.75rem;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
+}
+
+.action-btn {
+  padding: 0.4rem 0.75rem;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  border: none;
+}
+
+.action-btn.cancel {
+  background: rgba(71, 85, 105, 0.5);
+  color: #94a3b8;
+}
+
+.action-btn.confirm {
+  background: #3b82f6;
+  color: white;
+}
+
 .footer {
-  margin-top: 2rem;
+  margin-top: 1.5rem;
   font-size: 0.75rem;
   color: #475569;
   text-align: center;

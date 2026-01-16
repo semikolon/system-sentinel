@@ -46,8 +46,38 @@
         </div>
       </div>
 
+      <!-- Chat Interface -->
+      <div class="chat-section">
+        <div class="chat-header">
+          <span>Ask Claude</span>
+          <span id="chat-status" class="chat-status"></span>
+        </div>
+        <div id="chat-messages" class="chat-messages">
+          <div class="chat-message assistant">
+            <div class="message-content">What would you like to know about your system?</div>
+          </div>
+        </div>
+        <div class="chat-input-container">
+          <input type="text" id="chat-input" class="chat-input" placeholder="Why is memory high?" />
+          <button id="chat-send" class="chat-send">→</button>
+        </div>
+      </div>
+
+      <!-- Action Card (hidden by default) -->
+      <div id="action-card" class="action-card hidden">
+        <div class="action-header">
+          <span id="action-risk" class="action-risk">⚠️ Moderate Risk</span>
+          <span id="action-title">Suggested Action</span>
+        </div>
+        <div id="action-description" class="action-description"></div>
+        <div class="action-buttons">
+          <button id="action-cancel" class="action-btn cancel">Cancel</button>
+          <button id="action-confirm" class="action-btn confirm">Confirm</button>
+        </div>
+      </div>
+
       <div class="footer">
-        Sentinel v2.2 • Connected to Daemon
+        Sentinel v2.3 • AI Advisory
       </div>
     </div>
     <script type="module" src="main.js"></script>

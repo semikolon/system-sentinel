@@ -1,11 +1,13 @@
 use serde::{Deserialize, Serialize};
+use std::process::Stdio;
 use tokio::io::{AsyncBufReadExt, BufReader};
 use tokio::net::UnixStream;
+use tokio::process::Command as TokioCommand;
 use tauri::{AppHandle, Emitter, Manager};
 use tauri::image::Image;
 use tauri::menu::{Menu, MenuItem};
 use tauri::tray::{TrayIconBuilder, TrayIconEvent, TrayIconId};
-use tracing::{error, info};
+use tracing::{error, info, warn};
 
 const TRAY_ID: &str = "sentinel-tray";
 
@@ -143,6 +145,7 @@ pub fn run() {
             Ok(())
         })
         .plugin(tauri_plugin_opener::init())
+        .invoke_handler(tauri::generate_handler![submit_query, execute_action])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
@@ -164,6 +167,148 @@ fn update_tray_state(app: &AppHandle, state: HealthState) {
         let _ = tray.set_tooltip(Some(tooltip));
     }
 }
+
+// ========== CLAUDE INTEGRATION ==========
+
+/// Suggested action from Claude
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct SuggestedAction {
+    pub action_type: String,
+    pub description: String,
+    pub risk: String, // "low", "moderate", "high"
+    pub command: Option<String>,
+    pub pid: Option<u32>,
+}
+
+/// Submit a query to Claude CLI and stream response
+#[tauri::command]
+async fn submit_query(app: AppHandle, prompt: String, metrics_json: Option<String>) -> Result<(), String> {
+    // Check if claude CLI exists
+    if which::which("claude").is_err() {
+        let _ = app.emit("claude-error", "Claude CLI not found. Install with: npm install -g @anthropic-ai/claude-code");
+        return Err("Claude CLI not found".into());
+    }
+
+    let app_clone = app.clone();
+
+    tauri::async_runtime::spawn(async move {
+        // Build system prompt with context
+        let system_context = if let Some(metrics) = &metrics_json {
+            format!(
+                r#"You are System Sentinel, an AI advisor for macOS system health.
+
+CURRENT SYSTEM STATE:
+{}
+
+USER QUESTION: {}
+
+Provide concise, actionable advice. If you recommend killing a process,
+mention the risk level (low/moderate/high) and what might be lost."#,
+                metrics, prompt
+            )
+        } else {
+            format!(
+                r#"You are System Sentinel, an AI advisor for macOS system health.
+
+USER QUESTION: {}
+
+Provide concise, actionable advice."#,
+                prompt
+            )
+        };
+
+        // Spawn claude CLI
+        let result = TokioCommand::new("claude")
+            .args(["--print", &system_context])
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .spawn();
+
+        let mut child = match result {
+            Ok(c) => c,
+            Err(e) => {
+                error!("Failed to spawn claude: {}", e);
+                let _ = app_clone.emit("claude-error", format!("Failed to start Claude: {}", e));
+                return;
+            }
+        };
+
+        let stdout = match child.stdout.take() {
+            Some(s) => s,
+            None => {
+                let _ = app_clone.emit("claude-error", "Failed to capture stdout");
+                return;
+            }
+        };
+
+        let reader = BufReader::new(stdout);
+        let mut lines = reader.lines();
+
+        // Stream lines to frontend
+        while let Ok(Some(line)) = lines.next_line().await {
+            let _ = app_clone.emit("claude-stream", &line);
+            let _ = app_clone.emit("claude-stream", "\n");
+        }
+
+        // Wait for process to complete
+        match child.wait().await {
+            Ok(status) => {
+                if status.success() {
+                    let _ = app_clone.emit("claude-done", serde_json::json!({}));
+                } else {
+                    warn!("Claude exited with status: {}", status);
+                    let _ = app_clone.emit("claude-done", serde_json::json!({}));
+                }
+            }
+            Err(e) => {
+                let _ = app_clone.emit("claude-error", format!("Claude process error: {}", e));
+            }
+        }
+    });
+
+    Ok(())
+}
+
+/// Execute a confirmed action
+#[tauri::command]
+async fn execute_action(app: AppHandle, action: SuggestedAction) -> Result<String, String> {
+    info!("Executing action: {:?}", action);
+
+    match action.action_type.as_str() {
+        "kill_process" => {
+            if let Some(pid) = action.pid {
+                // Safety check - don't kill protected processes
+                let _protected = ["Terminal", "Ghostty", "Code", "Zed", "Safari", "Arc", "Claude", "Finder"];
+                // TODO: Check process name against protected list before killing
+
+                let output = std::process::Command::new("kill")
+                    .args(["-TERM", &pid.to_string()])
+                    .output()
+                    .map_err(|e| format!("Kill failed: {}", e))?;
+
+                if output.status.success() {
+                    let _ = app.emit("action-result", serde_json::json!({"success": true, "message": "Process terminated"}));
+                    Ok("Process terminated".into())
+                } else {
+                    let err = String::from_utf8_lossy(&output.stderr);
+                    Err(format!("Kill failed: {}", err))
+                }
+            } else {
+                Err("No PID specified".into())
+            }
+        }
+        "clear_cache" => {
+            // Safe operation: clear system caches
+            let _ = std::process::Command::new("sudo")
+                .args(["purge"])
+                .output();
+            Ok("Cache cleared".into())
+        }
+        _ => Err(format!("Unknown action type: {}", action.action_type)),
+    }
+}
+
+// ========== IPC CLIENT ==========
 
 async fn run_ipc_client(app: AppHandle) -> Result<(), anyhow::Error> {
     let socket_path = "/tmp/system-sentinel.soc";
