@@ -456,9 +456,9 @@ Next step: `launchctl load` the plist, then test notifications work.
 - [x] Click-to-toggle visibility on tray icon
 - [x] Dynamic icon/tooltip updates based on HealthState
 
-**Known Issue**: Tray icon renders as white rectangle instead of colored shield.
-Research indicates need to call `set_icon_as_template(false)` after each `set_icon()` update.
-See: `sentinel-ui/src-tauri/src/lib.rs:155` - fix deferred.
+**Known Issues**:
+- ~~Tray icon white~~ - Fixed: call `set_icon_as_template(false)` after build
+- **Menu click bug**: Left-click both opens menu AND toggles window. Fix: right-click for menu, left-click for toggle only.
 
 **Status (2026-01-16)**: UI functional, daemon→UI IPC working, icon color fix pending.
 
@@ -545,10 +545,17 @@ System Sentinel fills the gap with intelligent anomaly detection + AI diagnosis.
 - [x] Permission flow for risky action suggestions
 
 ### Phase 6: Polish & Integration
+- [ ] **Custom MCP Server for Sentinel** - Expose tools to CC instance:
+  - `get_sentinel_summary` - Current metrics, top processes, recent alerts
+  - `get_memory_timeline` - Historical memory data for trend analysis
+  - `get_process_details(pid)` - Deep dive on specific process
+  - Enables CC to access Sentinel data directly instead of via prompt injection
 - [ ] Graphiti integration (store incidents)
 - [ ] GPU/Neural Engine monitoring
 - [ ] User preference learning
 - [ ] Cross-session pattern recognition
+
+**Process name resolution needed**: "com" = `com.apple.Virtualization.VirtualMachine` (OrbStack), "node" = CC MCP servers
 
 ### Phase 7: Intelligent Automation (Future Vision)
 - [ ] **Auto-GitHub Issue Submission**: When detecting patterns matching known bugs
